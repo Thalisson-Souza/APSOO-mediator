@@ -8,6 +8,9 @@ public class VendedorEUA extends Participante {
 
     public VendedorEUA(Mediator mediator, String produto, double precoEmDolar) {
         super(mediator);
+        if (precoEmDolar <= 0) {
+            throw new IllegalArgumentException("O preço deve ser maior que zero.");
+        }
         this.produto = produto;
         this.precoEmDolar = precoEmDolar;
     }

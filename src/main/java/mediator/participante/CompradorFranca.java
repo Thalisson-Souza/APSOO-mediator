@@ -2,12 +2,18 @@ package mediator.participante;
 
 import mediator.negociacao.Mediator;
 
-public class CompradorFranca extends Participante {
+public class CompradorFranca extends Comprador {
     public CompradorFranca(Mediator mediator) {
         super(mediator);
     }
 
-    public boolean ofertar(double quantia) {
-        return mediator.proporOferta(quantia, "EUR");
+    @Override
+    public String nome() {
+        return "França";
+    }
+
+    @Override
+    public String moeda() {
+        return "EUR";
     }
 }
