@@ -1,43 +1,57 @@
-# Etapa 3 — Extensão com o comprador do Japão
+# Etapa 4 — Análise de uma solução alternativa
 
-Commit da extensão: [ver commit](https://github.com/Thalisson-Souza/APSOO-mediator/commit/33f9679)
+## Solução analisada
 
-Criei o `CompradorJapao`, que oferta em iene (JPY), e o `AplicativoEtapa3`, que
-monta a mesma negociação do `Aplicativo` com a taxa do iene no conversor e mais um
-comprador registrado. Não mexi em nenhuma classe que já existia.
+Outro desenvolvedor fez a comunicação direta entre os objetos. Cada comprador
+guarda o vendedor e o conversor, e o vendedor pode guardar os compradores pra
+avisar o resultado:
 
-**1. Qual classe foi criada para representar o novo comprador?**
+```text
+Comprador
+  |
+  +----> ConversorDolar
+  |
+  +----> VendedorEUA
+```
 
-O `CompradorJapao`, ele estende o `Comprador` e só diz o nome e que a moeda é `JPY`
+## Análise
 
-**2. Como o novo comprador foi registrado no Mediator?**
+**1. Qual é o principal problema dessa abordagem à medida que novos participantes são adicionados ao sistema?**
 
-Com o `mediator.registrarComprador(new CompradorJapao(mediator))` no `AplicativoEtapa3`, que é o mesmo método dos outros compradores, e a taxa do iene entrou com `conversor.adicionarTaxa("JPY", 0.0067)`
+Cada participante novo tem que ser ligado em vários outros, um comprador novo precisa conhecer o vendedor e o conversor e o vendedor tem que passar a conhecer ele também, então as ligações crescem bem mais rápido que as classes
 
-**3. Quais alterações foram necessárias no Mediator para permitir a participação do novo comprador?**
+**2. Quais classes passam a conhecer diretamente umas às outras?**
 
-Nenhuma, desde a v2-p2 o Mediator guarda os compradores pela moeda e aceita qualquer `Comprador`. Se fosse a v2-p1 ia ter que criar um `registrarCompradorJapao` na interface e no ConcreteMediator
+O `CompradorBrasil` e o `CompradorFranca` conhecem o `VendedorEUA` e o `ConversorDolar`, e o `VendedorEUA` conhece os dois compradores, então comprador e vendedor ficam dependendo um do outro
 
-**4. Foi necessário modificar as classes dos compradores existentes? Por quê?**
+**3. Como o aumento da quantidade de participantes pode afetar o acoplamento do sistema?**
 
-Não, cada comprador só conhece o `Mediator` e nem sabe que os outros existem então um comprador a mais não muda nada pra eles
+O acoplamento vai crescendo junto, com mais comprador o vendedor guarda mais referência e qualquer mudança no vendedor ou no conversor obriga a olhar todos os compradores. Aí fica difícil mudar ou testar uma classe sozinha
 
-**5. O que aconteceria se fosse necessário adicionar mais cinco compradores?**
+**4. Como o padrão Mediator distribui essa responsabilidade?**
 
-Ia ser cinco classes iguais ao `CompradorJapao`, as taxas das moedas novas no conversor e os registros no aplicativo e o resto fica do jeito que ta
+As ligações saem dos participantes e vão tudo pro Mediator, cada um só conhece ele e ele é o único que conhece todo mundo. A conversão continua no `ConversorDolar` e quem decide se aceita é o `VendedorEUA`, o Mediator só junta as partes
 
-**6. Como o padrão Mediator ajuda a reduzir o acoplamento entre os participantes?**
+**5. Qual é o papel do Mediator na comunicação entre os participantes?**
 
-Cada um só depende do `Mediator`, o comprador não conhece o vendedor nem o conversor e o vendedor não sabe quem fez a oferta, então mexer em um não afeta os outros
+Ele recebe a oferta do comprador, pede pro conversor passar pra dólar, manda pro vendedor e devolve a resposta pra quem ofertou, então ninguém fala com ninguém direto
 
-**7. Quais seriam as consequências de permitir que cada comprador se comunicasse diretamente com o vendedor e com o conversor?**
+**6. No contexto desse sistema, o que significa dizer que o Mediator centraliza a comunicação?**
 
-Todo comprador ia guardar o vendedor e o conversor e repetir a mesma lógica de converter e perguntar se aceita. Se mudasse o jeito de converter ou de avaliar a oferta ia ter que mexer em todos os compradores e quanto mais comprador pior fica
+Quer dizer que toda oferta passa pelo `proporOferta`, o comprador não sabe quem converte nem quem decide e o vendedor não sabe de onde veio a oferta. Se precisar mudar o fluxo da negociação é só mexer no Mediator
 
-**8. O Mediator está apenas encaminhando mensagens ou também possui responsabilidades relacionadas à negociação? Justifique.**
+**7. Quais seriam as consequências de colocar toda a lógica de negociação diretamente dentro da classe Aplicativo?**
 
-Ele também tem responsabilidade na negociação porque é ele que decide a ordem, primeiro converte e depois manda pro vendedor, e ele que confere se a moeda é de um comprador registrado, se o vendedor e o conversor existem e se a oferta é maior que zero. Mas a regra de aceitar continua no `VendedorEUA` e a conversão no `ConversorDolar`
+O `Aplicativo` ia cuidar da tela, de criar os objetos e da negociação tudo junto, o que vai contra a Responsabilidade Única, e a lógica ia ficar presa no menu sem dar pra reaproveitar como o `AplicativoEtapa3` faz hoje usando o mesmo Mediator
 
-## Próxima etapa
+**8. Qual é a diferença entre centralizar a comunicação no Mediator e simplesmente criar uma classe que chama os métodos dos demais objetos?**
 
-[v4 — análise de uma solução alternativa](https://github.com/Thalisson-Souza/APSOO-mediator/tree/v4)
+Uma classe que só chama os métodos controla tudo de fora e os objetos nem sabem que ela existe. No Mediator os participantes têm referência pra ele e mandam as mensagens por ele, tipo o comprador chamando o `proporOferta`, e como eles dependem da interface `Mediator` dá pra trocar o ConcreteMediator sem mexer neles
+
+**9. O uso do Mediator elimina completamente as dependências entre os objetos? Explique.**
+
+Não, os participantes ainda dependem do `Mediator` e o `MediatorNegociacao` depende de todos eles. O que muda é que deixa de ser todo mundo com todo mundo e passa a ser cada um só com o Mediator
+
+**10. Em que situações o uso do padrão Mediator pode tornar o sistema mais organizado e em quais situações pode tornar o Mediator excessivamente complexo?**
+
+Ajuda quando tem vários objetos que precisam conversar e as regras de quem fala com quem mudam, igual aqui com compradores de várias moedas. Fica complexo quando todas as regras do sistema vão parar no Mediator e ele vira uma classe que faz tudo, e também não compensa quando são só dois objetos conversando de um jeito simples
